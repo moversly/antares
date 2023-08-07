@@ -1,0 +1,20 @@
+service: lambda-uat-SwitchOFF
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: uat
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ec2:StopInstances"
+        - "autoscaling:SuspendProcesses"
+      Resource:
+        - "arn:aws:ec2:ap-southeast-1:978606118148:instance/i-00235257bb448a4ea"
+        - "arn:aws:autoscaling:ap-southeast-1:978606118148:autoScalingGroup:f4c6a1b7-4c92-4147-809c-625b4d95153e:autoScalingGroupName/ecs-infra-uat-ECSAutoScalingGroup-1WIMAH939PIJG"  
+functions:
+  stop_instance:
+    handler: src/handler.stop_instance
