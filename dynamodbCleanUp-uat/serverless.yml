@@ -1,0 +1,32 @@
+service: dynamodbCleanUp
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: uat
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:DescribeTable"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:GetRecords"
+        - "dynamodb:GetShardIterator"
+        - "dynamodb:DescribeStream"
+        - "dynamodb:ListStreams"
+        - "dynamodb:UpdateItem"
+      Resource:
+        - "arn:aws:dynamodb:ap-southeast-1:978606118148:table/*"
+        - "arn:aws:dynamodb:ap-southeast-1:978606118148:table/Order-uat" 
+functions:
+  cleanUp:
+    handler: src/handler.cleanUp
+
+plugins:
+  - serverless-offline
