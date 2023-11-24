@@ -1,0 +1,24 @@
+service: emailCampaign
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: prod
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+        - "s3:*"
+        - "dynamodb:*"
+      Resource:
+        - "*" 
+        - "arn:aws:dynamodb:ap-southeast-1:978606118148:table/*"
+functions:
+  emailCampaign:
+    handler: src/handler.emailCampaign
+
+plugins:
+  - serverless-offline
