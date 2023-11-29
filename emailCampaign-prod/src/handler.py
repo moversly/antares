@@ -2,6 +2,7 @@ import json
 import botocore.exceptions as ClientError
 import boto3
 import csv
+import time
 
 s3 = boto3.client('s3')
 sqs = boto3.client('sqs')
@@ -39,6 +40,7 @@ def emailCampaign(event, context):
                     "BOOL": False
                     }
                 }
+            print("this is data to insert",data_to_insert)
             saved_item = dynamodb.put_item(
                             TableName=table_name,
                             Item=data_to_insert
@@ -47,7 +49,9 @@ def emailCampaign(event, context):
             sqs_message = email
             
             print(sqs_message)
-            sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message))
+            delay_seconds = 1
+            response = sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message), DelaySeconds=delay_seconds)
+            print("this is the response:", response)
             
 
         print("SuccessFully send to SQS")
