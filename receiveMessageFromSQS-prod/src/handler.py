@@ -102,7 +102,8 @@ def put_data_into_dynamodb(table_name, email):
     email = email.replace('"','')
     item = {
         "emailId": email,
-        "mailSent": True
+        "mailSent": True,
+        "timeToDelete": None
     }
     print("this is the item writing to table :",item)
     try:
@@ -117,32 +118,37 @@ def lambda_handler(event, context):
     stringified_record = json.dumps(event.get('Records', [])[0])
     record = json.loads(stringified_record)
     print(record)
-    email = event['Records'][0]['body']
-    print("email is :",email)
-    bucket_name = 'email.campaign-prod'
-    html_file_key = 'email_campaign.html'
-    html_local_file_path = '/tmp/email_campaign.html'
-    table_name = 'SQSMessage-prod'
-    retrieved_item = get_data_from_dynamodb(table_name, email)
-    print("Retrieved Item : ", retrieved_item)
-    mailSent = retrieved_item['mailSent']
-    if retrieved_item is not None and mailSent is False :
-        # Download the HTML template from S3
-        html_download_success = download_html_template_from_s3(bucket_name, html_file_key, html_local_file_path)
-        # Download the PDF from S3
-        pdf_file_key = 'Moversly.pdf'
-        pdf_local_file_path = '/tmp/Moversly.pdf'
-        pdf_download_success = download_pdf_from_s3(bucket_name, pdf_file_key, pdf_local_file_path)
+    # email = event['Records'][0]['body']
+    # print("email is :",email)
+    event_source = ['Records'][0]['eventSource']
+    event_name = ['Records'][0]['eventName']
+    if event_name is not None and event_name is 'REMOVE' :
+        bucket_name = 'email.campaign-prod'
+        html_file_key = 'email_campaign.html'
+        html_local_file_path = '/tmp/email_campaign.html'
+        table_name = 'SQSMessage-prod'
+        email = event['Records'][0]['dynamodb']['Keys']['emailId']['S']
+        print("email is :",email)
+        retrieved_item = get_data_from_dynamodb(table_name, email)
+        print("Retrieved Item : ", retrieved_item)
+        mailSent = retrieved_item['mailSent']
+        if retrieved_item is not None and mailSent is False :
+            # Download the HTML template from S3
+            html_download_success = download_html_template_from_s3(bucket_name, html_file_key, html_local_file_path)
+            # Download the PDF from S3
+            pdf_file_key = 'Moversly.pdf'
+            pdf_local_file_path = '/tmp/Moversly.pdf'
+            pdf_download_success = download_pdf_from_s3(bucket_name, pdf_file_key, pdf_local_file_path)
 
-        if html_download_success and pdf_download_success:
-            # Read the content of the HTML template
-            email_body = get_html_template_content(html_local_file_path)
-            if email_body:
-                email_subject = 'Move Management Software'
-                recipient_email = email
-                send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
-                put_success = put_data_into_dynamodb(table_name, email)
-                if put_success:
-                    print("Data put into DynamoDB successfully.")
-                else:
-                    print("Failed to put data into DynamoDB.")
+            if html_download_success and pdf_download_success:
+                # Read the content of the HTML template
+                email_body = get_html_template_content(html_local_file_path)
+                if email_body:
+                    email_subject = 'Move Management Software'
+                    recipient_email = email
+                    send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
+                    put_success = put_data_into_dynamodb(table_name, email)
+                    if put_success:
+                        print("Data put into DynamoDB successfully.")
+                    else:
+                        print("Failed to put data into DynamoDB.")
