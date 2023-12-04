@@ -59,7 +59,7 @@ def send_email(subject, body, to_email, pdf_local_file_path):
     with open(pdf_local_file_path, 'rb') as file:
         attachment_data = file.read()
 
-    attachment = MIMEApplication(pdf_local_file_path)
+    attachment = MIMEApplication(open(pdf_local_file_path, 'rb').read())
     attachment.add_header('Content-Disposition', 'attachment', filename='Moversly.pdf')
     msg.attach(attachment)
 
@@ -69,7 +69,7 @@ def send_email(subject, body, to_email, pdf_local_file_path):
             Destinations=toEmail,
             RawMessage={'Data': msg.as_string()}
         )
-        print("Email sent! Message ID:", response['MessageId'])
+        print("Email sent! Email id :", toEmail)
     except Exception as e:
         print("Error sending email:", str(e))
 
@@ -102,8 +102,7 @@ def put_data_into_dynamodb(table_name, email):
     email = email.replace('"','')
     item = {
         "emailId": email,
-        "mailSent": True,
-        "timeToDelete": None
+        "mailSent": True
     }
     print("this is the item writing to table :",item)
     try:
@@ -115,40 +114,39 @@ def put_data_into_dynamodb(table_name, email):
         return False
 
 def lambda_handler(event, context):
-    stringified_record = json.dumps(event.get('Records', [])[0])
-    record = json.loads(stringified_record)
-    print(record)
-    # email = event['Records'][0]['body']
-    # print("email is :",email)
-    event_source = ['Records'][0]['eventSource']
-    event_name = ['Records'][0]['eventName']
-    if event_name is not None and event_name is 'REMOVE' :
-        bucket_name = 'email.campaign-prod'
-        html_file_key = 'email_campaign.html'
-        html_local_file_path = '/tmp/email_campaign.html'
-        table_name = 'SQSMessage-prod'
-        email = event['Records'][0]['dynamodb']['Keys']['emailId']['S']
+    print(event)
+    # stringified_record = json.dumps(event.get('Records', [])[0])
+    # record = json.loads(stringified_record)
+    # print(record)
+    for record in event['Records']:
+        email = record['body']
+        # email = event['Records']['body']
         print("email is :",email)
-        retrieved_item = get_data_from_dynamodb(table_name, email)
-        print("Retrieved Item : ", retrieved_item)
-        mailSent = retrieved_item['mailSent']
-        if retrieved_item is not None and mailSent is False :
-            # Download the HTML template from S3
-            html_download_success = download_html_template_from_s3(bucket_name, html_file_key, html_local_file_path)
-            # Download the PDF from S3
-            pdf_file_key = 'Moversly.pdf'
-            pdf_local_file_path = '/tmp/Moversly.pdf'
-            pdf_download_success = download_pdf_from_s3(bucket_name, pdf_file_key, pdf_local_file_path)
+        if email is not None and email == "":
+            bucket_name = 'email.campaign-prod'
+            html_file_key = 'email_campaign.html'
+            html_local_file_path = '/tmp/email_campaign.html'
+            table_name = 'SQSMessage-prod'
+            retrieved_item = get_data_from_dynamodb(table_name, email)
+            print("Retrieved Item : ", retrieved_item)
+            mailSent = retrieved_item['mailSent']
+            if retrieved_item is not None and mailSent is False :
+                # Download the HTML template from S3
+                html_download_success = download_html_template_from_s3(bucket_name, html_file_key, html_local_file_path)
+                # Download the PDF from S3
+                pdf_file_key = 'Moversly.pdf'
+                pdf_local_file_path = '/tmp/Moversly.pdf'
+                pdf_download_success = download_pdf_from_s3(bucket_name, pdf_file_key, pdf_local_file_path)
 
-            if html_download_success and pdf_download_success:
-                # Read the content of the HTML template
-                email_body = get_html_template_content(html_local_file_path)
-                if email_body:
-                    email_subject = 'Move Management Software'
-                    recipient_email = email
-                    send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
-                    put_success = put_data_into_dynamodb(table_name, email)
-                    if put_success:
-                        print("Data put into DynamoDB successfully.")
-                    else:
-                        print("Failed to put data into DynamoDB.")
+                if html_download_success and pdf_download_success:
+                    # Read the content of the HTML template
+                    email_body = get_html_template_content(html_local_file_path)
+                    if email_body:
+                        email_subject = 'Move Management Software'
+                        recipient_email = email
+                        send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
+                        put_success = put_data_into_dynamodb(table_name, email)
+                        if put_success:
+                            print("Data put into DynamoDB successfully.")
+                        else:
+                            print("Failed to put data into DynamoDB.")
