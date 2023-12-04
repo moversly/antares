@@ -28,7 +28,7 @@ def emailCampaign(event, context):
         for row in csv_reader:
             # Assuming 'email' is the column header containing email addresses
             email = row.get('Email')
-            if email is not None and email == '':
+            if email is not None and email != '':
                 table_name = 'SQSMessage-prod'
                 data_to_insert = {
                     "emailId": {
