@@ -28,30 +28,28 @@ def emailCampaign(event, context):
         for row in csv_reader:
             # Assuming 'email' is the column header containing email addresses
             email = row.get('Email')
-            #ccEmail = row.get('CcEmail')
-            # if ccEmail != '' :
-            #     email + "," + ccEmail
-            table_name = 'SQSMessage-prod'
-            data_to_insert = {
-                "emailId": {
-                    "S": email
-                    },
-                "mailSent": {
-                    "BOOL": False
+            if email is not None and email == '':
+                table_name = 'SQSMessage-prod'
+                data_to_insert = {
+                    "emailId": {
+                        "S": email
+                        },
+                    "mailSent": {
+                        "BOOL": False
+                        }
                     }
-                }
-            print("this is data to insert",data_to_insert)
-            saved_item = dynamodb.put_item(
-                            TableName=table_name,
-                            Item=data_to_insert
-                            )
-            sqs_queue_url = 'https://sqs.ap-southeast-1.amazonaws.com/978606118148/email-campaign'
-            sqs_message = email
+                print("this is data to insert",data_to_insert)
+                saved_item = dynamodb.put_item(
+                                TableName=table_name,
+                                Item=data_to_insert
+                                )
+                sqs_queue_url = 'https://sqs.ap-southeast-1.amazonaws.com/978606118148/email-campaign'
+                sqs_message = email
             
-            print(sqs_message)
-            delay_seconds = 1
-            response = sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message), DelaySeconds=delay_seconds)
-            print("this is the response:", response)
+                print(sqs_message)
+                delay_seconds = 1
+                response = sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message), DelaySeconds=delay_seconds)
+                print("this is the response:", response)
             
 
         print("SuccessFully send to SQS")
