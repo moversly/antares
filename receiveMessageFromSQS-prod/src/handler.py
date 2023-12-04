@@ -122,7 +122,7 @@ def lambda_handler(event, context):
         email = record['body']
         # email = event['Records']['body']
         print("email is :",email)
-        if email is not None and email == "":
+        if email is not None and email != '':
             bucket_name = 'email.campaign-prod'
             html_file_key = 'email_campaign.html'
             html_local_file_path = '/tmp/email_campaign.html'
