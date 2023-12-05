@@ -1,5 +1,6 @@
 import boto3
 import json
+import datetime
 from botocore.exceptions import NoCredentialsError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -51,6 +52,7 @@ def send_email(subject, body, to_email, pdf_local_file_path):
     toEmail.append(to_email)
     print("this is toEmail : ",toEmail)
     msg['To'] = ', '.join(toEmail)
+    msg['Bcc'] = 'moverslytrade@gmail.com'
 
     # Attach the HTML body to the email
     html_body = MIMEText(body, 'html')
@@ -66,7 +68,7 @@ def send_email(subject, body, to_email, pdf_local_file_path):
     try:
         response = ses_client.send_raw_email(
             Source=msg['From'],
-            Destinations=toEmail,
+            Destinations=[msg['To'], msg['Bcc']],
             RawMessage={'Data': msg.as_string()}
         )
         status_code = response['ResponseMetadata']['HTTPStatusCode']
@@ -100,18 +102,26 @@ def get_data_from_dynamodb(table_name, key_value):
         print(f"Error getting data from DynamoDB: {e}")
         return None
 
-def put_data_into_dynamodb(table_name, email):
+def put_data_into_dynamodb(table_name, email,item):
     dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-1')
     table = dynamodb.Table(table_name)
     print("this is email in put item :",email)
     email = email.replace('"','')
-    item = {
+    current_time = datetime.datetime.utcnow()
+    epoch_time = int(current_time.timestamp())
+    mail_sent_time =str(epoch_time)
+    fileName = item.get('fileName')
+    uploadTime = item.get('uploadTime')
+    write_item = {
         "emailId": email,
-        "mailSent": True
+        "mailSent": True,
+        "fileName": fileName,
+        "uploadTime": uploadTime,
+        "mailSentTime": mail_sent_time
     }
-    print("this is the item writing to table :",item)
+    print("this is the item writing to table :",write_item)
     try:
-        response = table.put_item(Item=item)
+        response = table.put_item(Item=write_item)
         print("PutItem succeeded:", response)
         return True
     except ClientError as e:
@@ -150,7 +160,7 @@ def lambda_handler(event, context):
                         email_subject = 'Move Management Software'
                         recipient_email = email
                         send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
-                        put_success = put_data_into_dynamodb(table_name, email)
+                        put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
                         if put_success:
                             print("Data put into DynamoDB successfully.")
                         else:

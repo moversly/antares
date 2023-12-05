@@ -3,6 +3,7 @@ import botocore.exceptions as ClientError
 import boto3
 import csv
 import time
+import datetime
 
 s3 = boto3.client('s3')
 sqs = boto3.client('sqs')
@@ -38,7 +39,8 @@ def emailCampaign(event, context):
         s3_bucket = event['Records'][0]['s3']['bucket']['name']
         s3_key = event['Records'][0]['s3']['object']['key']
         print(event)
-        
+        current_time = datetime.datetime.utcnow()
+        epoch_time = int(current_time.timestamp())
 
         # Read data from CSV file in S3
         s3_response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
@@ -61,6 +63,12 @@ def emailCampaign(event, context):
                             },
                         "mailSent": {
                             "BOOL": False
+                            },
+                        "fileName": {
+                            "S": s3_key
+                            },
+                        "uploadTime": {
+                            "S": str(epoch_time)
                             }
                         }
                     print("this is data to insert",data_to_insert)
