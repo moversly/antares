@@ -69,7 +69,12 @@ def send_email(subject, body, to_email, pdf_local_file_path):
             Destinations=toEmail,
             RawMessage={'Data': msg.as_string()}
         )
-        print("Email sent! Email id :", toEmail)
+        status_code = response['ResponseMetadata']['HTTPStatusCode']
+        if status_code == 200:
+            print("Email sent! Email id :", toEmail," status code: ",status_code)
+        else :
+            print("Email is not sent!", toEmail," status code: ",status_code)
+
     except Exception as e:
         print("Error sending email:", str(e))
 

@@ -9,6 +9,29 @@ sqs = boto3.client('sqs')
 dynamodb = boto3.client('dynamodb')
 
 
+def get_data_from_dynamodb(table_name, key_value):
+    dynamodb = boto3.resource('dynamodb', region_name='ap-southeast-1')
+    table = dynamodb.Table(table_name)
+    print("this is the key value",key_value)
+    key_value = key_value.replace('"','')
+
+    try:
+        response = table.get_item(
+            Key={
+                'emailId': key_value
+            }
+        )
+        print("response is :",response)
+        if 'Item' in response :
+            item = response.get('Item')
+            return item
+        else :
+            return None
+    except ClientError as e:
+        print(f"Error getting data from DynamoDB: {e}")
+        return None
+
+
 def emailCampaign(event, context):
     try :
          # Get the S3 bucket and key from the S3 event
@@ -30,29 +53,34 @@ def emailCampaign(event, context):
             email = row.get('Email')
             if email is not None and email != '':
                 table_name = 'SQSMessage-prod'
-                data_to_insert = {
-                    "emailId": {
-                        "S": email
-                        },
-                    "mailSent": {
-                        "BOOL": False
+                item = get_data_from_dynamodb(table_name,email)
+                if item is None or item['emailId'] != email :
+                    data_to_insert = {
+                        "emailId": {
+                            "S": email
+                            },
+                        "mailSent": {
+                            "BOOL": False
+                            }
                         }
-                    }
-                print("this is data to insert",data_to_insert)
-                saved_item = dynamodb.put_item(
-                                TableName=table_name,
-                                Item=data_to_insert
-                                )
-                sqs_queue_url = 'https://sqs.ap-southeast-1.amazonaws.com/978606118148/email-campaign'
-                sqs_message = email
+                    print("this is data to insert",data_to_insert)
+                    saved_item = dynamodb.put_item(
+                                    TableName=table_name,
+                                    Item=data_to_insert
+                                    )
+                    sqs_queue_url = 'https://sqs.ap-southeast-1.amazonaws.com/978606118148/email-campaign'
+                    sqs_message = email
             
-                print(sqs_message)
-                delay_seconds = 1
-                response = sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message), DelaySeconds=delay_seconds)
-                print("this is the response:", response)
+                    print(sqs_message)
+                    delay_seconds = 1
+                    response = sqs.send_message(QueueUrl=sqs_queue_url, MessageBody=json.dumps(sqs_message), DelaySeconds=delay_seconds)
+                    print("this is the response:", response)
+                else : 
+                    print("Email Id is already exixsting !", email)
             
 
         print("SuccessFully send to SQS")
+
     
 
     except Exception as e :
