@@ -44,7 +44,7 @@ def emailCampaign(event, context):
 
         # Read data from CSV file in S3
         s3_response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
-        csv_data = s3_response['Body'].read().decode('utf-8')
+        csv_data = s3_response['Body'].read().decode('latin-1')
 
         # Parse CSV data
         csv_reader = csv.DictReader(csv_data.splitlines())
