@@ -1,0 +1,23 @@
+{
+    "version": "1.0.0",
+    "description": "RecieveMessageFromSqs, Order event handler",
+    "main": "index.js",
+    "scripts": {
+        "format": "npx prettier ./src*/*.js",
+        "test": "mocha --timeout 200000 --exit  ./test/index.test.js",
+        "lint": "eslint --quiet --fix ./src/*/.js"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.462.0",
+        "aws-sdk": "^2.1500.0",
+        "axios": "^1.6.2",
+        "csv-file-validator": "^2.1.0",
+        "csvtojson": "^2.0.10",
+        "dotenv": "^16.0.3",
+        "dynamodb-data-types": "^4.0.1",
+        "json-difference": "^1.9.1",
+        "mocha": "^10.2.0",
+        "nodemailer": "^6.9.7",
+        "request": "^2.88.2"
+    }
+}

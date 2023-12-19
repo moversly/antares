@@ -1,0 +1,21 @@
+service: emailSchedulerNodeJS
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: uat
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+        - "s3:*"
+        - "mandrill:*"
+      Resource:
+        - "arn:aws:dynamodb:ap-southeast-1:978606118148:table/*"
+        - "*" 
+
+functions:
+  function:
+    handler: index.handler
