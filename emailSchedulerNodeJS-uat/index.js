@@ -93,7 +93,6 @@ module.exports.handler = async (event) => {
             "Moversly Test Account/New State template.txt"
           );
           const login_useremail = loginUserEmail;
-          console.log("new login user email", login_useremail);
           const message = template
             .replace("${loginUserGivenName}", loginUserGivenName)
             .replace("${loginUserFamilyName}", loginUserFamilyName)
@@ -107,7 +106,6 @@ module.exports.handler = async (event) => {
             .replace("${toCountry}", toCountry)
             .replace("${moverWebsite}", moverWebsite)
             .replace("$moverWebsite", moverWebsite);
-          console.log(message);
           const response = await sendEmail(
             receiverEmail,
             ccEmail,
@@ -220,7 +218,14 @@ module.exports.handler = async (event) => {
       const response = await axios.post(mandrillApiEndpoint, requestBody);
 
       // Print the response
-      console.log("Email sent!");
+      console.log(
+        "Email sent! to : ",
+        toEmails,
+        "From : ",
+        senderEmail,
+        "In Order State:",
+        OldImage?.orderStatus?.S
+      );
       console.log("Response:", response);
     } catch (error) {
       // Handle errors
@@ -239,7 +244,6 @@ module.exports.handler = async (event) => {
     const mandrillApiKey = "B2KnJLwitNzIqMBPH-A9zg";
     const mandrillApiEndpoint =
       "https://mandrillapp.com/api/1.0/messages/send.json";
-    console.log("this is cc email", ccEmail);
     const toEmails = ccEmail.map((email) => ({ email, type: "cc" }));
     const receiverEmailObject = {
       email: receiverEmail,
@@ -268,6 +272,14 @@ module.exports.handler = async (event) => {
       const response = await axios.post(mandrillApiEndpoint, requestBody);
 
       // Print the response
+      console.log(
+        "Email sent! to",
+        toEmails,
+        "From",
+        senderEmail,
+        "In Order State:",
+        OldImage?.orderStatus.S
+      );
       console.log("Response:", response.data);
     } catch (error) {
       // Handle errors

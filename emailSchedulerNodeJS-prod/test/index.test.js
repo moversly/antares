@@ -19,6 +19,9 @@ const payload = {
           orderId: {
             S: "16112023_054803_000491",
           },
+          orderStatus: {
+            S: "NEW",
+          },
           emailSchedule: {
             M: {
               ccEmail: {

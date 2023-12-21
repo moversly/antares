@@ -19,6 +19,9 @@ const payload = {
           orderId: {
             S: "16112023_054803_000491",
           },
+          orderStatus: {
+            S: "CUSTOMER_QUOTE_ISSUED_STATE",
+          },
           emailSchedule: {
             M: {
               ccEmail: {
@@ -101,7 +104,7 @@ const payload = {
             BOOL: true,
           },
           timeToDelete: {
-            N: "1701502733",
+            N: "1703060159",
           },
         },
         SequenceNumber: "398036300000000038576652201",
