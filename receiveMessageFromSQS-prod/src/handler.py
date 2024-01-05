@@ -41,12 +41,12 @@ def get_html_template_content(local_file_path):
         print(f"Error reading HTML template content: {e}")
         return None
 
-def send_email(subject, body, to_email, pdf_local_file_path):
+def send_email(subject, body, to_email, pdf_local_file_path,from_email):
     ses_client = boto3.client('ses', region_name='ap-southeast-1')
 
     msg = MIMEMultipart()
     msg['Subject'] = subject
-    msg['From'] = "info@moversly.com"
+    msg['From'] = from_email
     to_email = to_email.replace('"','')
     toEmail = []
     toEmail.append(to_email)
@@ -58,12 +58,12 @@ def send_email(subject, body, to_email, pdf_local_file_path):
     html_body = MIMEText(body, 'html')
     msg.attach(html_body)
 
-    with open(pdf_local_file_path, 'rb') as file:
-        attachment_data = file.read()
-
-    attachment = MIMEApplication(open(pdf_local_file_path, 'rb').read())
-    attachment.add_header('Content-Disposition', 'attachment', filename='Moversly.pdf')
-    msg.attach(attachment)
+    if pdf_local_file_path is not None:
+        with open(pdf_local_file_path, 'rb') as file:
+            attachment_data = file.read()
+            attachment = MIMEApplication(open(pdf_local_file_path, 'rb').read())
+            attachment.add_header('Content-Disposition', 'attachment', filename='Moversly.pdf')
+            msg.attach(attachment)
 
     try:
         response = ses_client.send_raw_email(
@@ -117,7 +117,8 @@ def put_data_into_dynamodb(table_name, email,item):
         "mailSent": True,
         "fileName": fileName,
         "uploadTime": uploadTime,
-        "mailSentTime": mail_sent_time
+        "mailSentTime": mail_sent_time,
+        "bucketName": item.get('bucketName')
     }
     print("this is the item writing to table :",write_item)
     try:
@@ -138,30 +139,59 @@ def lambda_handler(event, context):
         # email = event['Records']['body']
         print("email is :",email)
         if email is not None and email != '':
-            bucket_name = 'email.campaign-prod'
-            html_file_key = 'email_campaign.html'
-            html_local_file_path = '/tmp/email_campaign.html'
+            
+            
             table_name = 'SQSMessage-prod'
             retrieved_item = get_data_from_dynamodb(table_name, email)
+            bucket_name = retrieved_item['bucketName']
+            print("bucket name is",bucket_name)
             print("Retrieved Item : ", retrieved_item)
             mailSent = retrieved_item['mailSent']
             if retrieved_item is not None and mailSent is False :
-                # Download the HTML template from S3
-                html_download_success = download_html_template_from_s3(bucket_name, html_file_key, html_local_file_path)
-                # Download the PDF from S3
-                pdf_file_key = 'Moversly.pdf'
-                pdf_local_file_path = '/tmp/Moversly.pdf'
-                pdf_download_success = download_pdf_from_s3(bucket_name, pdf_file_key, pdf_local_file_path)
 
-                if html_download_success and pdf_download_success:
-                    # Read the content of the HTML template
-                    email_body = get_html_template_content(html_local_file_path)
-                    if email_body:
-                        email_subject = 'Move Management Software'
-                        recipient_email = email
-                        send_email(email_subject, email_body, recipient_email, pdf_local_file_path)
-                        put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
-                        if put_success:
-                            print("Data put into DynamoDB successfully.")
-                        else:
-                            print("Failed to put data into DynamoDB.")
+                if bucket_name == 'email.campaign.send.message.to.sqs-prod' :
+                    template_bucket_name = 'email.campaign-prod'
+                    html_file_key = 'email_campaign.html'
+                    html_local_file_path = '/tmp/email_campaign.html'
+
+                    # Download the HTML template from S3
+                    html_download_success = download_html_template_from_s3(template_bucket_name, html_file_key, html_local_file_path)
+                    # Download the PDF from S3
+                    pdf_file_key = 'Moversly.pdf'
+                    pdf_local_file_path = '/tmp/Moversly.pdf'
+                    pdf_download_success = download_pdf_from_s3(template_bucket_name, pdf_file_key, pdf_local_file_path)
+
+                    if html_download_success and pdf_download_success:   
+                        # Read the content of the HTML template
+                        email_body = get_html_template_content(html_local_file_path)
+                        if email_body:
+                            email_subject = 'Move Management Software'
+                            recipient_email = email
+                            send_email(email_subject, email_body, recipient_email, pdf_local_file_path,"info@moversly.com")
+                            put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
+                            if put_success:
+                                print("Data put into DynamoDB successfully.")
+                            else:
+                                print("Failed to put data into DynamoDB.")
+                elif bucket_name == 'apac.email.campaign.send.message.to.sqs-prod':
+                    template_bucket_name = 'email.campaign-prod'
+                    html_file_key = 'apac_email_campaign.html'
+                    html_local_file_path = '/tmp/apac_email_campaign.html'
+                    # Download the HTML template from S3
+                    html_download_success = download_html_template_from_s3(template_bucket_name, html_file_key, html_local_file_path)
+
+                    if html_download_success :   
+                        # Read the content of the HTML template
+                        email_body = get_html_template_content(html_local_file_path)
+                        if email_body:
+                            email_subject = ' Your trusted Mover & Renovation Company '
+                            recipient_email = email
+                            send_email(email_subject, email_body, recipient_email, None, "contact@apacmobility.com")
+                            put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
+                            if put_success:
+                                print("Data put into DynamoDB successfully.")
+                            else:
+                                print("Failed to put data into DynamoDB.")
+
+                
+                

@@ -51,7 +51,7 @@ def emailCampaign(event, context):
 
 
         for row in csv_reader:
-            # Assuming 'email' is the column header containing email addresses
+            # Assuming 'email' is the column header containing email addresses s
             email = row.get('Email')
             if email is not None and email != '':
                 table_name = 'SQSMessage-prod'
@@ -66,6 +66,9 @@ def emailCampaign(event, context):
                             },
                         "fileName": {
                             "S": s3_key
+                            },
+                            "bucketName" : {
+                                "S": s3_bucket
                             },
                         "uploadTime": {
                             "S": str(epoch_time)
