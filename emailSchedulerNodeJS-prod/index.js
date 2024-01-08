@@ -117,39 +117,43 @@ module.exports.handler = async (event) => {
         }
 
         if (OldImage?.orderStatus?.S === "CUSTOMER_QUOTE_ISSUED_STATE") {
-          const template = await getTemplateFromS3(
-            "procyon-templates-prod",
-            "Apac Relocation Pte Ltd/QuoteIssuedStateTemplate.txt"
-          );
-          const pdf = await getPdfFromS3("quotefileupload-prod", quoteId);
-          const login_useremail = loginUserEmail;
-          const message = template
-            .replace("$quoteId", quoteId)
-            .replace("$uniqueId", uniqueId)
-            .replace("$moverWebsite", moverWebsite)
-            .replace("$quotePdfUrl", quoteUrl)
-            .replace("$orderId", orderId)
-            .replace("$loginUserGivenName", loginUserGivenName)
-            .replace("$loginUserFamilyName", loginUserFamilyName)
-            .replace("$loginUserPhone", loginUserPhone)
-            .replace("${loginUserEmail}", login_useremail)
-            .replace("$loginUserEmail", login_useremail)
-            .replace("$moverName", moverName)
-            .replace("${logo}", logoUrl)
-            .replace("$givenName", customerGivenName)
-            .replace("$fromCountry", fromCountry)
-            .replace("$toCountry", toCountry)
-            .replace("${moverWebsite}", moverWebsite)
-            .replace("$moverWebsite", moverWebsite);
+          const item = await getItems(orderId);
+          const state = item?.Item?.state?.S;
+          if (state === "CUSTOMER_QUOTE_ISSUED_STATE") {
+            const template = await getTemplateFromS3(
+              "procyon-templates-prod",
+              "Apac Relocation Pte Ltd/QuoteIssuedStateTemplate.txt"
+            );
+            const pdf = await getPdfFromS3("quotefileupload-prod", quoteId);
+            const login_useremail = loginUserEmail;
+            const message = template
+              .replace("$quoteId", quoteId)
+              .replace("$uniqueId", uniqueId)
+              .replace("$moverWebsite", moverWebsite)
+              .replace("$quotePdfUrl", quoteUrl)
+              .replace("$orderId", orderId)
+              .replace("$loginUserGivenName", loginUserGivenName)
+              .replace("$loginUserFamilyName", loginUserFamilyName)
+              .replace("$loginUserPhone", loginUserPhone)
+              .replace("${loginUserEmail}", login_useremail)
+              .replace("$loginUserEmail", login_useremail)
+              .replace("$moverName", moverName)
+              .replace("${logo}", logoUrl)
+              .replace("$givenName", customerGivenName)
+              .replace("$fromCountry", fromCountry)
+              .replace("$toCountry", toCountry)
+              .replace("${moverWebsite}", moverWebsite)
+              .replace("$moverWebsite", moverWebsite);
 
-          const response = await sendEmailWithAttachment(
-            receiverEmail,
-            ccEmail,
-            senderEmail,
-            message,
-            subject,
-            pdf
-          );
+            const response = await sendEmailWithAttachment(
+              receiverEmail,
+              ccEmail,
+              senderEmail,
+              message,
+              subject,
+              pdf
+            );
+          }
         }
       }
     }
@@ -284,6 +288,24 @@ module.exports.handler = async (event) => {
     } catch (error) {
       // Handle errors
       console.error("Error:", error.message);
+    }
+  }
+
+  async function getItems(order_id) {
+    try {
+      console.log("entered get items");
+      const params = {
+        TableName: `Order-prod`,
+        Key: {
+          id: { S: order_id },
+        },
+        // ProjectionExpression: "orderId",
+      };
+      console.log("This is params", params);
+      const res = await ddb.getItem(params).promise();
+      return res;
+    } catch (error) {
+      throw Error(error);
     }
   }
 };

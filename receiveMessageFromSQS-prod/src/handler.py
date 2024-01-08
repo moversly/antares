@@ -186,7 +186,7 @@ def lambda_handler(event, context):
                         # Read the content of the HTML template
                         email_body = get_html_template_content(html_local_file_path)
                         if email_body:
-                            email_subject = ' Your trusted Mover & Renovation Company '
+                            email_subject = ' Reliable International Mover For Your Relocation '
                             recipient_email = email
                             send_email(email_subject, email_body, recipient_email, pdf_local_file_path, "contact@apacmobility.com")
                             put_success = put_data_into_dynamodb(table_name, email, retrieved_item)

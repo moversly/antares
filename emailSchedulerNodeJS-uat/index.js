@@ -5,6 +5,7 @@ var ddb = new AWS.DynamoDB({ apiVersion: "2023-01-24" });
 var ses = new AWS.SES({ region: "ap-southeast-1" });
 const s3 = new AWS.S3();
 const axios = require("axios");
+const { get } = require("request");
 
 module.exports.handler = async (event) => {
   let stringifyRecord = JSON.stringify(event.Records?.[0]);
@@ -117,39 +118,43 @@ module.exports.handler = async (event) => {
         }
 
         if (OldImage?.orderStatus?.S === "CUSTOMER_QUOTE_ISSUED_STATE") {
-          const template = await getTemplateFromS3(
-            "procyon-templates-uat",
-            "Moversly Test Account/Quote sent state template.txt"
-          );
-          const pdf = await getPdfFromS3("quotefileupload", quoteId);
-          const login_useremail = loginUserEmail;
-          const message = template
-            .replace("$quoteId", quoteId)
-            .replace("$uniqueId", uniqueId)
-            .replace("$moverWebsite", moverWebsite)
-            .replace("$quotePdfUrl", quoteUrl)
-            .replace("$orderId", orderId)
-            .replace("$loginUserGivenName", loginUserGivenName)
-            .replace("$loginUserFamilyName", loginUserFamilyName)
-            .replace("$loginUserPhone", loginUserPhone)
-            .replace("${loginUserEmail}", login_useremail)
-            .replace("$loginUserEmail", login_useremail)
-            .replace("$moverName", moverName)
-            .replace("${logo}", logoUrl)
-            .replace("$givenName", customerGivenName)
-            .replace("$fromCountry", fromCountry)
-            .replace("$toCountry", toCountry)
-            .replace("${moverWebsite}", moverWebsite)
-            .replace("$moverWebsite", moverWebsite);
+          const item = await getItems(orderId);
+          const state = item?.Item?.state?.S;
+          if (state === "CUSTOMER_QUOTE_ISSUED_STATE") {
+            const template = await getTemplateFromS3(
+              "procyon-templates-uat",
+              "Moversly Test Account/Quote sent state template.txt"
+            );
+            const pdf = await getPdfFromS3("quotefileupload", quoteId);
+            const login_useremail = loginUserEmail;
+            const message = template
+              .replace("$quoteId", quoteId)
+              .replace("$uniqueId", uniqueId)
+              .replace("$moverWebsite", moverWebsite)
+              .replace("$quotePdfUrl", quoteUrl)
+              .replace("$orderId", orderId)
+              .replace("$loginUserGivenName", loginUserGivenName)
+              .replace("$loginUserFamilyName", loginUserFamilyName)
+              .replace("$loginUserPhone", loginUserPhone)
+              .replace("${loginUserEmail}", login_useremail)
+              .replace("$loginUserEmail", login_useremail)
+              .replace("$moverName", moverName)
+              .replace("${logo}", logoUrl)
+              .replace("$givenName", customerGivenName)
+              .replace("$fromCountry", fromCountry)
+              .replace("$toCountry", toCountry)
+              .replace("${moverWebsite}", moverWebsite)
+              .replace("$moverWebsite", moverWebsite);
 
-          const response = await sendEmailWithAttachment(
-            receiverEmail,
-            ccEmail,
-            senderEmail,
-            message,
-            subject,
-            pdf
-          );
+            const response = await sendEmailWithAttachment(
+              receiverEmail,
+              ccEmail,
+              senderEmail,
+              message,
+              subject,
+              pdf
+            );
+          }
         }
       }
     }
@@ -284,6 +289,24 @@ module.exports.handler = async (event) => {
     } catch (error) {
       // Handle errors
       console.error("Error:", error.message);
+    }
+  }
+
+  async function getItems(order_id) {
+    try {
+      console.log("entered get items");
+      const params = {
+        TableName: `Order-uat`,
+        Key: {
+          id: { S: order_id },
+        },
+        // ProjectionExpression: "orderId",
+      };
+      console.log("This is params", params);
+      const res = await ddb.getItem(params).promise();
+      return res;
+    } catch (error) {
+      throw Error(error);
     }
   }
 };
