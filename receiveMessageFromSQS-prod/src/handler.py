@@ -41,7 +41,7 @@ def get_html_template_content(local_file_path):
         print(f"Error reading HTML template content: {e}")
         return None
 
-def send_email(subject, body, to_email, pdf_local_file_path,from_email):
+def send_email(subject, body, to_email, pdf_local_file_path, pdf_name, from_email):
     ses_client = boto3.client('ses', region_name='ap-southeast-1')
 
     msg = MIMEMultipart()
@@ -62,7 +62,7 @@ def send_email(subject, body, to_email, pdf_local_file_path,from_email):
         with open(pdf_local_file_path, 'rb') as file:
             attachment_data = file.read()
             attachment = MIMEApplication(open(pdf_local_file_path, 'rb').read())
-            attachment.add_header('Content-Disposition', 'attachment', filename='Moversly.pdf')
+            attachment.add_header('Content-Disposition', 'attachment', filename=pdf_name)
             msg.attach(attachment)
 
     try:
@@ -167,7 +167,7 @@ def lambda_handler(event, context):
                         if email_body:
                             email_subject = 'Move Management Software'
                             recipient_email = email
-                            send_email(email_subject, email_body, recipient_email, pdf_local_file_path,"info@moversly.com")
+                            send_email(email_subject, email_body, recipient_email, pdf_local_file_path, "Moversly.pdf", "info@moversly.com")
                             put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
                             if put_success:
                                 print("Data put into DynamoDB successfully.")
@@ -188,7 +188,7 @@ def lambda_handler(event, context):
                         if email_body:
                             email_subject = ' Reliable International Mover For Your Relocation '
                             recipient_email = email
-                            send_email(email_subject, email_body, recipient_email, pdf_local_file_path, "contact@apacmobility.com")
+                            send_email(email_subject, email_body, recipient_email, pdf_local_file_path, "Apac Relocation.pdf","contact@apacmobility.com")
                             put_success = put_data_into_dynamodb(table_name, email, retrieved_item)
                             if put_success:
                                 print("Data put into DynamoDB successfully.")
