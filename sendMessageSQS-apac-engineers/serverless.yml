@@ -1,0 +1,24 @@
+service: sendMessageSQS-apac-engineers
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: prod
+  region: ap-southeast-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:ReceiveMessage"
+        - "sqs:DeleteMessage"
+        - "sqs:GetQueueAttributes"
+        - "ses:SendEmail"
+        - "ses:SendRawEmail"
+      Resource:
+        - "arn:aws:sqs:ap-southeast-1:978606118148:apac-engineers-queue"
+        - "*"
+
+functions:
+  send_message_sqs:
+    handler: src/handler.send_message_sqs

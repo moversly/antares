@@ -14,13 +14,13 @@ const payload = {
         Keys: { orderId: [Object], scheduleId: [Object] },
         OldImage: {
           scheduleId: {
-            S: "30112023_073853_000655",
+            S: "04032024_034921_000298",
           },
           orderId: {
-            S: "28122023_115226_000896",
+            S: "26012024_071536_000462",
           },
           orderStatus: {
-            S: "CUSTOMER_QUOTE_ISSUED_STATE",
+            S: "QUOTE_REJECTED_STATE",
           },
           emailSchedule: {
             M: {
@@ -44,6 +44,9 @@ const payload = {
                 S: "<p>Dear ,</p><p>Thank you for your time to discuss about the moving requirement.</p><p>We would like to confirm the PreMove Survey on Thursday, September 28, 2023 11:00 PM at your address 30 Raffles Ave., Singapore 039803.</p><p>thanks&nbsp;</p><p>&nbsp;</p>",
               },
               quoteFollowUp: {
+                BOOL: false,
+              },
+              quoteRejectFollowUp: {
                 BOOL: true,
               },
               quoteId: {
@@ -59,7 +62,7 @@ const payload = {
                 S: "info@moversly.com",
               },
               subject: {
-                S: "Moving Quote From Dubai,United Arab Emirates To Dubai,United Arab Emirates | Moversly Test Account",
+                S: "Quote Rejected",
               },
               toCountry: {
                 S: "United Arab Emirates",

@@ -88,37 +88,60 @@ module.exports.handler = async (event) => {
         });
 
         if (OldImage?.orderStatus?.S === "NEW") {
-          const template = await getTemplateFromS3(
-            "procyon-templates-prod",
-            "Apac Relocation Pte Ltd/NewStateTemplate.txt"
-          );
-          const login_useremail = loginUserEmail;
-          const message = template
-            .replace("${loginUserGivenName}", loginUserGivenName)
-            .replace("${loginUserFamilyName}", loginUserFamilyName)
-            .replace("${loginUserPhone}", loginUserPhone)
-            .replace("${loginUserEmail}", login_useremail)
-            .replace("$loginUserEmail", login_useremail)
-            .replace("${moverName}", moverName)
-            .replace("${logo}", logoUrl)
-            .replace("${givenName}", customerGivenName)
-            .replace("${fromCountry}", fromCountry)
-            .replace("${toCountry}", toCountry)
-            .replace("${moverWebsite}", moverWebsite)
-            .replace("$moverWebsite", moverWebsite);
-          const response = await sendEmail(
-            receiverEmail,
-            ccEmail,
-            senderEmail,
-            message,
-            subject
-          );
-          console.log(response);
+          const item = await getItems(orderId);
+          const state = item?.Item?.state?.S;
+          const PARAMS = {
+            TableName: "EmailSchedule-uat",
+            Item: {
+              ...OldImage,
+              sendMail: {
+                BOOL: false,
+              },
+            },
+          };
+          if (state === "NEW") {
+            const template = await getTemplateFromS3(
+              "procyon-templates-prod",
+              "Apac Relocation Pte Ltd/NewStateTemplate.txt"
+            );
+            const login_useremail = loginUserEmail;
+            const message = template
+              .replace("${loginUserGivenName}", loginUserGivenName)
+              .replace("${loginUserFamilyName}", loginUserFamilyName)
+              .replace("${loginUserPhone}", loginUserPhone)
+              .replace("${loginUserEmail}", login_useremail)
+              .replace("$loginUserEmail", login_useremail)
+              .replace("${moverName}", moverName)
+              .replace("${logo}", logoUrl)
+              .replace("${givenName}", customerGivenName)
+              .replace("${fromCountry}", fromCountry)
+              .replace("${toCountry}", toCountry)
+              .replace("${moverWebsite}", moverWebsite)
+              .replace("$moverWebsite", moverWebsite);
+            const response = await sendEmail(
+              receiverEmail,
+              ccEmail,
+              senderEmail,
+              message,
+              subject
+            );
+          } else {
+            const response = await ddb.putItem(PARAMS).promise();
+          }
         }
 
         if (OldImage?.orderStatus?.S === "CUSTOMER_QUOTE_ISSUED_STATE") {
           const item = await getItems(orderId);
           const state = item?.Item?.state?.S;
+          const PARAMS = {
+            TableName: "EmailSchedule-uat",
+            Item: {
+              ...OldImage,
+              sendMail: {
+                BOOL: false,
+              },
+            },
+          };
           if (state === "CUSTOMER_QUOTE_ISSUED_STATE") {
             const template = await getTemplateFromS3(
               "procyon-templates-prod",
@@ -153,6 +176,51 @@ module.exports.handler = async (event) => {
               subject,
               pdf
             );
+          } else {
+            const response = await ddb.putItem(PARAMS).promise();
+          }
+        }
+
+        if (OldImage?.orderStatus?.S === "QUOTE_REJECTED_STATE") {
+          const item = await getItems(orderId);
+          const state = item?.Item?.state?.S;
+          const Params = {
+            TableName: "EmailSchedule-uat",
+            Item: {
+              ...OldImage,
+              sendMail: {
+                BOOL: false,
+              },
+            },
+          };
+          if (state === "QUOTE_REJECTED_STATE") {
+            const template = await getTemplateFromS3(
+              "procyon-templates-uat",
+              "Moversly Test Account/quote_rejected.html"
+            );
+            const login_useremail = loginUserEmail;
+            const message = template
+              .replace("$moverWebsite", moverWebsite)
+              .replace("$loginUserGivenName", loginUserGivenName)
+              .replace("$loginUserFamilyName", loginUserFamilyName)
+              .replace("$loginUserPhone", loginUserPhone)
+              .replace("${loginUserEmail}", login_useremail)
+              .replace("$loginUserEmail", login_useremail)
+              .replace("$moverName", moverName)
+              .replace("${logo}", logoUrl)
+              .replace("$givenName", customerGivenName)
+              .replace("${moverWebsite}", moverWebsite)
+              .replace("$moverWebsite", moverWebsite);
+
+            const response = await sendEmail(
+              receiverEmail,
+              ccEmail,
+              senderEmail,
+              message,
+              subject
+            );
+          } else {
+            const response = await ddb.putItem(Params).promise();
           }
         }
       }
