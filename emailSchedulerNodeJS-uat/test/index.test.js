@@ -14,10 +14,10 @@ const payload = {
         Keys: { orderId: [Object], scheduleId: [Object] },
         OldImage: {
           scheduleId: {
-            S: "04032024_034921_000298",
+            S: "19032024_055650_000301",
           },
           orderId: {
-            S: "26012024_071536_000462",
+            S: "19032024_055649_000849",
           },
           orderStatus: {
             S: "QUOTE_REJECTED_STATE",
@@ -32,10 +32,10 @@ const payload = {
                 ],
               },
               customerFamilyName: {
-                S: "Test",
+                S: "EMail",
               },
               customerGivenName: {
-                S: "Prajual",
+                S: "Automation Rejected",
               },
               fromCountry: {
                 S: "United Arab Emirates",
@@ -59,7 +59,7 @@ const payload = {
                 S: "prajualnandu@gmail.com",
               },
               senderEmail: {
-                S: "info@moversly.com",
+                S: "sales@moversly.com",
               },
               subject: {
                 S: "Quote Rejected",
@@ -78,10 +78,10 @@ const payload = {
           loginUser: {
             M: {
               loginUserEmail: {
-                S: "info@moversly.com",
+                S: "sales@moversly.com",
               },
               loginUserFamilyName: {
-                S: "Apac",
+                S: "Moversly",
               },
               loginUserGivenName: {
                 S: "Test Sales",
@@ -107,7 +107,7 @@ const payload = {
             BOOL: true,
           },
           timeToDelete: {
-            N: "1703060159",
+            N: "1710916372",
           },
         },
         SequenceNumber: "398036300000000038576652201",

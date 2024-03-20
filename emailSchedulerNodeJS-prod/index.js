@@ -75,6 +75,7 @@ module.exports.handler = async (event) => {
         const uniqueId = OldImage?.emailSchedule?.M?.uniqueId?.S;
         const moverWebsite = OldImage?.loginUser?.M?.moverWebsite?.S;
         const orderId = OldImage?.orderId?.S;
+        const scheduleId = OldImage?.scheduleId?.S;
 
         const senderEmail = OldImage?.emailSchedule?.M?.senderEmail?.S;
         const receiverEmail = OldImage?.emailSchedule?.M?.receiverEmail?.S;
@@ -212,13 +213,40 @@ module.exports.handler = async (event) => {
               .replace("${moverWebsite}", moverWebsite)
               .replace("$moverWebsite", moverWebsite);
 
-            const response = await sendEmail(
-              receiverEmail,
-              ccEmail,
-              senderEmail,
-              message,
-              subject
-            );
+            let no_of_times = 0;
+            const schedule_item = await getScheduleItems(scheduleId, orderId);
+            let noOfTimes = schedule_item?.Item?.noOfTimes?.S;
+            if (noOfTimes === null || noOfTimes === undefined) {
+              no_of_times = 1;
+            } else {
+              no_of_times = parseInt(noOfTimes, 10) + 1;
+            }
+            if (
+              noOfTimes === null ||
+              noOfTimes === undefined ||
+              noOfTimes < 3
+            ) {
+              const response = await sendEmail(
+                receiverEmail,
+                ccEmail,
+                senderEmail,
+                message,
+                subject
+              );
+              const times = no_of_times.toString();
+              const params = {
+                TableName: "EmailSchedule-prod",
+                Item: {
+                  ...OldImage,
+                  noOfTimes: {
+                    S: times,
+                  },
+                },
+              };
+              const respons = await ddb.putItem(params).promise();
+            } else {
+              const response = await ddb.putItem(Params).promise();
+            }
           } else {
             const response = await ddb.putItem(Params).promise();
           }
@@ -374,6 +402,22 @@ module.exports.handler = async (event) => {
       return res;
     } catch (error) {
       throw Error(error);
+    }
+  }
+
+  async function getScheduleItems(scheduleId, orderId) {
+    try {
+      const params = {
+        TableName: `EmailSchedule-prod`,
+        Key: {
+          scheduleId: { S: scheduleId },
+          orderId: { S: orderId },
+        },
+      };
+      const res = await ddb.getItem(params).promise();
+      return res;
+    } catch (error) {
+      throw new Error(error);
     }
   }
 };
